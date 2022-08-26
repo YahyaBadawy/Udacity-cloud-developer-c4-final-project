@@ -1,3 +1,5 @@
+"use strict"
+
 import 'source-map-support/register'
 
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda'
@@ -30,6 +32,6 @@ handler
   .use(
     cors({
       credentials: true,
-      headers: true
+      headers: 'Access-Control-Allow-Origin'
     })
   )

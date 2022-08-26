@@ -6,20 +6,36 @@ plugins:
   - serverless-reqvalidator-plugin
 
 package:
-  individually: true
+  individually: false
 
 custom:
   webpack:
     includeModules: true
+    concurrency: 1
+
+  documentation:
+    api:
+      info:
+        version: v1.0.0
+        title: todos API
+        description: Serverless application for todos posting
+    models:
+      - name: CreateRequest
+        contentType: application/json
+        schema: ${file(src/models/create-todo-request.json)}
+      - name: UpdateRequest
+        contentType: application/json
+        schema: ${file(src/models/update-todo-request.json)}
+
   
 provider:
   name: aws
   runtime: nodejs14.x
 
   stage: ${opt:stage, 'prod'}
-  region: ${opt:region, 'us-east-1'}
+  region: ${opt:region, 'me-south-1'}
 
-  tracing:
+  logs:
     lambda: true
     apiGateway: true
 
@@ -28,116 +44,36 @@ provider:
     TODOS_CREATED_AT_INDEX: CreatedAtIndex
     ATTACHMENT_S3_BUCKET: serverless-c4-todo-images-${self:provider.stage}
     SIGNED_URL_EXPIRATION: 300
-
-  # logs:
-  #   # Enable API Gateway logs
-  #   restApi: true
-
+  
   iamRoleStatements:
     - Effect: Allow
       Action:
-        - xray:PutTelemetryRecords
-        - xray:PutTraceSegments
-      Resource: "*"
+        - dynamodb:Query
+      Resource:
+        - arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODOS_TABLE}/index/${self:provider.environment.TODOS_CREATED_AT_INDEX}
 
-functions:
-  Auth:
-    handler: src/lambda/auth/auth0Authorizer.handler
+    - Effect: Allow
+      Action:
+        - dynamodb:putItem
+        - dynamodb:updateItem
+        - dynamodb:deleteItem
+      Resource:
+        - arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODOS_TABLE}
 
-  GetTodos:
-    handler: src/lambda/http/getTodos.handler
-    events:
-      - http:
-          method: get
-          path: todos
-          authorizer: Auth
-          cors: true
-          reqValidatorName: RequestBodyValidator
-    iamRoleStatements:
-      - Effect: Allow
-        Action:
-          - dynamodb:Query
-        Resource:
-          - arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODOS_TABLE}/index/${self:provider.environment.TODOS_CREATED_AT_INDEX}
-
-  CreateTodo:
-    handler: src/lambda/http/createTodo.handler
-    events:
-      - http:
-          method: post
-          path: todos
-          authorizer: Auth
-          cors: true
-          reqValidatorName: RequestBodyValidator
-    iamRoleStatements:
-      - Effect: Allow
-        Action:
-          - dynamodb:putItem
-        Resource:
-          - arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODOS_TABLE}
-
-  UpdateTodo:
-    handler: src/lambda/http/updateTodo.handler
-    events:
-      - http:
-          method: patch
-          path: todos/{todoId}
-          authorizer: Auth
-          cors: true
-          reqValidatorName: RequestBodyValidator
-    iamRoleStatements:
-      - Effect: Allow
-        Action:
-          - dynamodb:updateItem
-        Resource:
-          - arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODOS_TABLE}
-
-  DeleteTodo:
-    handler: src/lambda/http/deleteTodo.handler
-    events:
-      - http:
-          method: delete
-          path: todos/{todoId}
-          authorizer: Auth
-          cors: true
-          reqValidatorName: RequestBodyValidator
-    iamRoleStatements:
-      - Effect: Allow
-        Action:
-          - dynamodb:deleteItem
-        Resource:
-          - arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODOS_TABLE}
-
-
-  GenerateUploadUrl:
-    handler: src/lambda/http/generateUploadUrl.handler
-    events:
-      - http:
-          method: post
-          path: todos/{todoId}/attachment
-          authorizer: Auth
-          cors: true
-          reqValidatorName: RequestBodyValidator
-    iamRoleStatements:
-      - Effect: Allow
-        Action:
-          - s3:PutObject
-        Resource: arn:aws:s3:::${self:provider.environment.ATTACHMENT_S3_BUCKET}/*
-      - Effect: Allow
-        Action:
-          - dynamodb:updateItem
-        Resource:
-          - arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODOS_TABLE}
+    - Effect: Allow
+      Action:
+        - s3:PutObject
+      Resource: arn:aws:s3:::${self:provider.environment.ATTACHMENT_S3_BUCKET}/*
 
 resources:
-  Resources:
+  Resources:  
     RequestBodyValidator:
       Type: AWS::ApiGateway::GatewayResponse
       Properties:
         ResponseParameters:
           gatewayresponse.header.Access-Control-Allow-Origin: "'*'"
           gatewayresponse.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
-          gatewayresponse.header.Access-Control-Allow-Methods: "'GET, POST, PUT, DELETE, OPTIONS'"
+          gatewayresponse.header.Access-Control-Allow-Methods: "'GET,OPTIONS,POST,PATCH,DELETE'"
         ResponseType: DEFAULT_4XX
         RestApiId:
           Ref: ApiGatewayRestApi
@@ -203,3 +139,64 @@ resources:
               Action: 's3:GetObject'
               Resource: 'arn:aws:s3:::${self:provider.environment.ATTACHMENT_S3_BUCKET}/*'
         Bucket: !Ref AttachmentsBucket
+
+functions:
+  Auth:
+    handler: src/lambda/auth/auth0Authorizer.handler
+
+  GetTodos:
+    handler: src/lambda/http/getTodos.handler
+    events:
+      - http:
+          method: get
+          path: todos
+          authorizer: Auth
+          cors: true
+  
+  CreateTodo:
+    handler: src/lambda/http/createTodo.handler
+    events:
+      - http:
+          method: post
+          path: todos
+          authorizer: Auth
+          cors: true
+        #reqValidatorName: RequestBodyValidator
+          documentation:
+            summary: Create a new todo
+            description: creating JSON group of name, and dueDate
+            requestModels:
+              "application/json": CreateRequest
+  
+  UpdateTodo:
+    handler: src/lambda/http/updateTodo.handler
+    events:
+      - http:
+          method: patch
+          path: todos/{todoId}
+          authorizer: Auth
+          cors: true
+        #reqValidatorName: RequestBodyValidator          
+          documentation:
+            summary: Update a todo
+            description: updating JSON todo of name, dueDate and done
+            requestModels:
+              "application/json": UpdateRequest
+
+  DeleteTodo:
+    handler: src/lambda/http/deleteTodo.handler
+    events:
+      - http:
+          method: delete
+          path: todos/{todoId}
+          authorizer: Auth
+          cors: true
+
+  GenerateUploadUrl:
+    handler: src/lambda/http/generateUploadUrl.handler
+    events:
+      - http:
+          method: post
+          path: todos/{todoId}/attachment
+          authorizer: Auth
+          cors: true

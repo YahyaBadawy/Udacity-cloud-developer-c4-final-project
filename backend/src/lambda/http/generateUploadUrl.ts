@@ -1,3 +1,5 @@
+"use strict"
+
 import 'source-map-support/register'
 
 import { APIGatewayProxyEvent, APIGatewayProxyResult } from 'aws-lambda'
@@ -29,14 +31,15 @@ export const handler = middy(
         JSON.stringify({
           uploadImageUrl: url
         })
-    }
+    };
   }
-)
+);
 
 handler
   .use(httpErrorHandler())
   .use(
     cors({
-      credentials: true
+      credentials: true,
+      headers: 'Access-Control-Allow-Origin'
     })
   )

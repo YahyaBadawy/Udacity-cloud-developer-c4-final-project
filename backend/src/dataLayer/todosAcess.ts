@@ -44,7 +44,7 @@ export class TodosAccess {
 
         const items = result.Items
 
-        console.log('Returning todos for user: ' + userId + ', and items: ' + items)
+        console.log('Returning todos for user: ' + userId + ', and items: ' + JSON.stringify({items}))
         return items as TodoItem[]
     }
 
