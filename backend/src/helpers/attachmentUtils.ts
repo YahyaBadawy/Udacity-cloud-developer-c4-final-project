@@ -1,12 +1,9 @@
 import * as AWS from 'aws-sdk'
-const AWSXRay = require('aws-xray-sdk')
-
-const XAWS = AWSXRay.captureAWS(AWS)
-const docClient = new XAWS.DynamoDB.DocumentClient()
+const docClient = new AWS.DynamoDB.DocumentClient()
 const bucketName = process.env.ATTACHMENT_S3_BUCKET
 const todosTable = process.env.TODOS_TABLE
 const urlExpiration = process.env.SIGNED_URL_EXPIRATION
-const s3 = new XAWS.S3()
+const s3 = new AWS.S3()
 // TODO: Implement the fileStogare logic
 
 export class AttachmentUtils {
@@ -17,7 +14,7 @@ export class AttachmentUtils {
             Bucket: bucketName,
             Key: attachmentId,
             Expires: parseInt(urlExpiration, 10)
-        }).promise()
+        })
     }
 
     async updateAttachmentUrl(todoId: string, userId: string){
