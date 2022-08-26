@@ -3,18 +3,23 @@ const docClient = new AWS.DynamoDB.DocumentClient()
 const bucketName = process.env.ATTACHMENT_S3_BUCKET
 const todosTable = process.env.TODOS_TABLE
 const urlExpiration = process.env.SIGNED_URL_EXPIRATION
-const s3 = new AWS.S3()
+const s3 = new AWS.S3({
+    apiVersion: '2006-03-01',
+    signatureVersion: 'v4',
+  })
 // TODO: Implement the fileStogare logic
 
 export class AttachmentUtils {
     constructor() { }
     
-    async getUploadURL(attachmentId: string): Promise<String> {
-        return s3.getSignedUrl('putObject', {
+    async getUploadURL(todoId: string): Promise<String> {
+        const signedUrl = await s3.getSignedUrl('putObject', {
             Bucket: bucketName,
-            Key: attachmentId,
+            Key: todoId,
             Expires: parseInt(urlExpiration, 10)
         })
+
+        return signedUrl
     }
 
     async updateAttachmentUrl(todoId: string, userId: string){
@@ -30,6 +35,8 @@ export class AttachmentUtils {
             }
         }).promise();
     }
+
+    
 }
 
 

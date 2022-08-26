@@ -29,7 +29,7 @@ export const handler = middy(
       statusCode: 201,
       body:
         JSON.stringify({
-          uploadImageUrl: url
+          uploadUrl: url
         })
     };
   }

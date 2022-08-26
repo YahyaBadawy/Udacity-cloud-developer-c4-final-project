@@ -93,15 +93,16 @@ export class TodosAccess {
         return !!result.Item
     }
 
-    async createAttachmentPresignedUrl(attachmentId: string) {
+    async createAttachmentPresignedUrl(attachmentId: string): Promise<String>{
         console.log('getting the presigned url')
-        return await attachmentUtils.getUploadURL(attachmentId)
+        const url = await attachmentUtils.getUploadURL(attachmentId)
+        return url
     }
 
     async updateTodoAttachmentUrl(todoId: string, userId: string) {
         logger.info(`Updating todoId ${todoId} for user ${userId}`)
         console.log('updating the presigned url')
-        return await attachmentUtils.updateAttachmentUrl(todoId, userId) 
+        await attachmentUtils.updateAttachmentUrl(todoId, userId) 
     }
 
     async deleteTodo(todoId: string, userId: string): Promise<String> {

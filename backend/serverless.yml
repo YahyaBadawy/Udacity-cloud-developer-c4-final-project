@@ -34,7 +34,7 @@ provider:
   runtime: nodejs14.x
 
   stage: ${opt:stage, 'prod'}
-  region: ${opt:region, 'me-south-1'}
+  region: ${opt:region, 'us-east-1'}
 
   logs:
     lambda: true
@@ -60,10 +60,10 @@ provider:
         - dynamodb:deleteItem
       Resource:
         - arn:aws:dynamodb:${self:provider.region}:*:table/${self:provider.environment.TODOS_TABLE}
-
     - Effect: Allow
       Action:
         - s3:PutObject
+        - s3:GetObject
       Resource: arn:aws:s3:::${self:provider.environment.ATTACHMENT_S3_BUCKET}/*
 
 resources:
