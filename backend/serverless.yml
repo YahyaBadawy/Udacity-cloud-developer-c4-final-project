@@ -4,6 +4,7 @@ plugins:
   - serverless-webpack
   - serverless-iam-roles-per-function
   - serverless-reqvalidator-plugin
+  - serverless-aws-documentation
 
 package:
   individually: false
@@ -20,11 +21,11 @@ custom:
         title: todos API
         description: Serverless application for todos posting
     models:
-      - name: CreateRequest
-        contentType: application/json
+      - name: "CreateRequest"
+        contentType: "application/json"
         schema: ${file(src/models/create-todo-request.json)}
-      - name: UpdateRequest
-        contentType: application/json
+      - name: "UpdateRequest"
+        contentType: "application/json"
         schema: ${file(src/models/update-todo-request.json)}
 
   
@@ -78,6 +79,15 @@ resources:
         RestApiId:
           Ref: ApiGatewayRestApi
 
+    OnlyBody:
+      Type: AWS::ApiGateway::RequestValidator
+      Properties:
+        Name: 'OnlyBody'
+        RestApiId:
+          Ref: ApiGatewayRestApi
+        ValidateRequestBody: true # true or false
+        ValidateRequestParameters: false # true or false
+    
     # TODO: Create a DynamoDB table with local secondary index and a composite key
     TodosTable:
       Type: AWS::DynamoDB::Table
@@ -161,12 +171,12 @@ functions:
           path: todos
           authorizer: Auth
           cors: true
-        #reqValidatorName: RequestBodyValidator
+          reqValidatorName: OnlyBody
           documentation:
             summary: Create a new todo
             description: creating JSON group of name, and dueDate
             requestModels:
-              "application/json": CreateRequest
+              application/json: CreateRequest
   
   UpdateTodo:
     handler: src/lambda/http/updateTodo.handler
@@ -176,12 +186,12 @@ functions:
           path: todos/{todoId}
           authorizer: Auth
           cors: true
-        #reqValidatorName: RequestBodyValidator          
+          reqValidatorName: OnlyBody          
           documentation:
             summary: Update a todo
             description: updating JSON todo of name, dueDate and done
             requestModels:
-              "application/json": UpdateRequest
+              application/json: UpdateRequest
 
   DeleteTodo:
     handler: src/lambda/http/deleteTodo.handler

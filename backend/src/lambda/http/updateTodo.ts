@@ -25,6 +25,6 @@ export const handler: APIGatewayProxyHandler = async (event: APIGatewayProxyEven
       'Access-Control-Allow-Credentials': '*'
     },
     body:
-      JSON.stringify({todos: todo})
+      JSON.stringify({items: todo})
   }
 }
