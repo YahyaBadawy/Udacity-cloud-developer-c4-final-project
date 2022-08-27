@@ -23,10 +23,10 @@ custom:
     models:
       - name: "CreateRequest"
         contentType: "application/json"
-        schema: ${file(src/models/create-todo-request.json)}
+        schema: ${file(models/create-todo-model.json)}
       - name: "UpdateRequest"
         contentType: "application/json"
-        schema: ${file(src/models/update-todo-request.json)}
+        schema: ${file(models/update-todo-model.json)}
 
   
 provider:
@@ -68,7 +68,7 @@ provider:
 
 resources:
   Resources:  
-    RequestBodyValidator:
+    GatewayResponseDefault4XX:
       Type: AWS::ApiGateway::GatewayResponse
       Properties:
         ResponseParameters:
@@ -176,7 +176,11 @@ functions:
             summary: Create a new todo
             description: creating JSON group of name, and dueDate
             requestModels:
-              application/json: CreateRequest
+              "application/json": CreateRequest
+          request:
+            schema:
+              application/json: ${file(models/create-todo-model.json)}
+
   
   UpdateTodo:
     handler: src/lambda/http/updateTodo.handler
@@ -191,7 +195,11 @@ functions:
             summary: Update a todo
             description: updating JSON todo of name, dueDate and done
             requestModels:
-              application/json: UpdateRequest
+              "application/json": UpdateRequest
+          request:
+            schema:
+              application/json: ${file(models/create-todo-model.json)}
+
 
   DeleteTodo:
     handler: src/lambda/http/deleteTodo.handler
